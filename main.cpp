@@ -7,12 +7,16 @@
 #include <iostream>
 #include <vector>
 #include "camera.h"
+#include "Block.h"
+#include <algorithm>
 
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 
 void processInput(GLFWwindow* window);
 
-void mouseCallback(GLFWwindow* window, double xpos, double ypos);
+void cameraCallback(GLFWwindow* window, double xpos, double ypos);
+
+void mouseCallback(GLFWwindow* window, int button, int action, int mods);
 
 // Configurações da tela
 const unsigned int WIDTH = 1080;
@@ -24,6 +28,7 @@ const unsigned int HEIGHT = 720;
 #define CONCRETE 2
 #define ICE 3
 #define WOOD 4
+int currentTexture = 2;
 
 Camera camera(glm::vec3(0.0f, 1.0f, 3.0f));
 float lastX = WIDTH / 2.0f;
@@ -33,6 +38,9 @@ bool firstMouse = true;
 // Variáveis de tempo
 double deltaTime = 0.0f;
 double lastFrame = 0.0f;
+
+// Vetor com todos os blocos posicionados pelo jogador
+std::vector<Block> blocks;
 
 int main() {
     // Inicializar e configurar o GLFW
@@ -50,7 +58,8 @@ int main() {
     }
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
-    glfwSetCursorPosCallback(window, mouseCallback);
+    glfwSetCursorPosCallback(window, cameraCallback);
+    glfwSetMouseButtonCallback(window, mouseCallback);
     // Não mostrar o cursor na tela
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
@@ -220,17 +229,19 @@ int main() {
         glDrawArrays(GL_TRIANGLES, 0, 36);
 
 
-        // Desenhar os blocos do jogador
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, textures[ICE]);
+        for (auto &block: blocks) {
+            // Desenhar os blocos do jogador
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, textures[block.Texture]);
 
-//        for (unsigned int i = 0; i < 1; i++) {
-        model = glm::mat4(1.0f);
-        // model = glm::rotate(model, glm::radians(angle) + glfwGetTime(), glm::vec3(1.0f, 0.3f, 0.5f));
-        shader.setMat4("model", model);
+            // Criar um novo bloco e mover pra posição certa
+            model = glm::mat4(1.0f);
+            model = glm::translate(model, block.Position);
 
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-//        }
+            // Renderizar o bloco
+            shader.setMat4("model", model);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
 
         // Mostrar as mudanças na tela
         glfwSwapBuffers(window);
@@ -246,8 +257,28 @@ int main() {
     return 0;
 }
 
+void placeBlock() {
+    float x, y, z;
+    const float armLength = 2.0;
+
+    x = std::round(camera.Position.x + camera.Front.x);
+    y = std::round(camera.Position.y + camera.Front.y);
+    z = std::round(camera.Position.z + camera.Front.z * armLength);
+    glm::vec3 newPos = glm::vec3(x, y, z);
+
+    // Se nenhum dos blocos já posicionados tiver a mesma posição do novo bloco, colocar ele no vetor
+    if (std::none_of(blocks.begin(), blocks.end(),
+                     [&newPos](Block alreadyPlaced) { return alreadyPlaced.Position == newPos; })) {
+        blocks.emplace_back(newPos, currentTexture);
+        printf("Novo bloco colocado em (%f, %f, %f)\n", x, y, z);
+    } else {
+        printf("Já tem um bloco em (%f, %f, %f)\n", x, y, z);
+    }
+
+}
+
 // Função para tratamento das teclas relacionadas à movimentação
-void processInput(GLFWwindow *window) {
+void processInput(GLFWwindow* window) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 
@@ -259,6 +290,13 @@ void processInput(GLFWwindow *window) {
         camera.ProcessKeyboard(LEFT, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         camera.ProcessKeyboard(RIGHT, deltaTime);
+
+    if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
+        currentTexture = CONCRETE;
+    if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)
+        currentTexture = ICE;
+    if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS)
+        currentTexture = WOOD;
 }
 
 // Função pra tratar mudanças no tamanho da tela
@@ -269,7 +307,7 @@ void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
 }
 
 // Função pra tratar movimentos do mouse e mover a câmera de acordo
-void mouseCallback(GLFWwindow *window, double xpos, double ypos) {
+void cameraCallback(GLFWwindow* window, double xpos, double ypos) {
     if (firstMouse) {
         lastX = xpos;
         lastY = ypos;
@@ -283,4 +321,10 @@ void mouseCallback(GLFWwindow *window, double xpos, double ypos) {
     lastY = ypos;
 
     camera.ProcessMouseMovement(xoffset, yoffset);
+}
+
+// Função pra tratar os botões do mouse
+void mouseCallback(GLFWwindow* window, int button, int action, int mods) {
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+        placeBlock();
 }
