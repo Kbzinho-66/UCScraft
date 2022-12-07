@@ -229,12 +229,12 @@ int main() {
         glDrawArrays(GL_TRIANGLES, 0, 36);
 
 
+        /******************** Desenhar os blocos do jogador ********************/
         for (auto &block: blocks) {
-            // Desenhar os blocos do jogador
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, textures[block.Texture]);
 
-            // Criar um novo bloco e mover pra posição certa
+            // Criar bloco e mover para a posição certa
             model = glm::mat4(1.0f);
             model = glm::translate(model, block.Position);
 
@@ -258,23 +258,28 @@ int main() {
 }
 
 void placeBlock() {
-    float x, y, z;
-    const float armLength = 2.0;
-
-    x = std::round(camera.Position.x + camera.Front.x);
-    y = std::round(camera.Position.y + camera.Front.y);
-    z = std::round(camera.Position.z + camera.Front.z * armLength);
-    glm::vec3 newPos = glm::vec3(x, y, z);
+    auto newPos = camera.getClickPosition();
 
     // Se nenhum dos blocos já posicionados tiver a mesma posição do novo bloco, colocar ele no vetor
     if (std::none_of(blocks.begin(), blocks.end(),
                      [&newPos](Block alreadyPlaced) { return alreadyPlaced.Position == newPos; })) {
         blocks.emplace_back(newPos, currentTexture);
-        printf("Novo bloco colocado em (%f, %f, %f)\n", x, y, z);
-    } else {
-        printf("Já tem um bloco em (%f, %f, %f)\n", x, y, z);
+
+        printf("Novo bloco colocado em (%f, %f, %f)\n", newPos.x, newPos.y, newPos.z);
     }
 
+}
+
+void breakBlock() {
+    auto newPos = camera.getClickPosition();
+
+    // Encontrar algum bloco com as mesmas coordenadas do click
+    auto selectedBlock = std::find_if(blocks.begin(), blocks.end(),
+                                      [&newPos](Block placed) { return placed.Position == newPos; });
+
+    if (selectedBlock != blocks.end()) {
+        blocks.erase(selectedBlock);
+    }
 }
 
 // Função para tratamento das teclas relacionadas à movimentação
@@ -290,6 +295,11 @@ void processInput(GLFWwindow* window) {
         camera.ProcessKeyboard(LEFT, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         camera.ProcessKeyboard(RIGHT, deltaTime);
+
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+        camera.MovementSpeed = 5.0f;
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_RELEASE)
+        camera.MovementSpeed = 2.5f;
 
     if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
         currentTexture = CONCRETE;
@@ -321,10 +331,16 @@ void cameraCallback(GLFWwindow* window, double xpos, double ypos) {
     lastY = ypos;
 
     camera.ProcessMouseMovement(xoffset, yoffset);
+
+//    printf("Posição = (%f, %f, %f)\n", camera.Position.x, camera.Position.y, camera.Position.z);
+//    printf("Front = (%f, %f, %f)\n", camera.Front.x, camera.Front.y, camera.Front.z);
+
 }
 
 // Função pra tratar os botões do mouse
 void mouseCallback(GLFWwindow* window, int button, int action, int mods) {
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
         placeBlock();
+    if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
+        breakBlock();
 }

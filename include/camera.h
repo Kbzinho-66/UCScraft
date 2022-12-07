@@ -22,8 +22,8 @@ const float YAW = -90.0f;
 const float PITCH = 0.0f;
 const float SPEED = 2.5f;
 const float SENSITIVITY = 0.1f;
-const float ZOOM = 45.0f;
-
+const float FOV = 60.0f;
+const float ARM_LENGTH = 2.5f;
 
 // An abstract camera class that processes input and calculates the corresponding Euler Angles, Vectors and Matrices for use in OpenGL
 class Camera {
@@ -48,7 +48,7 @@ public:
            float yaw = YAW, float pitch = PITCH) : Front(glm::vec3(0.0f, 0.0f, -1.0f)),
                                                    MovementSpeed(SPEED),
                                                    MouseSensitivity(SENSITIVITY),
-                                                   Zoom(ZOOM) {
+                                                   Zoom(FOV) {
         Position = position;
         WorldUp = up;
         Yaw = yaw;
@@ -58,7 +58,7 @@ public:
 
     // constructor with scalar values
     Camera(float posX, float posY, float posZ, float upX, float upY, float upZ, float yaw, float pitch) : Front(
-            glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVITY), Zoom(ZOOM) {
+            glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVITY), Zoom(FOV) {
         Position = glm::vec3(posX, posY, posZ);
         WorldUp = glm::vec3(upX, upY, upZ);
         Yaw = yaw;
@@ -106,13 +106,15 @@ public:
         updateCameraVectors();
     }
 
-    // processes input received from a mouse scroll-wheel event. Only requires input on the vertical wheel-axis
-    void ProcessMouseScroll(float yoffset) {
-        Zoom -= (float) yoffset;
-        if (Zoom < 1.0f)
-            Zoom = 1.0f;
-        if (Zoom > 45.0f)
-            Zoom = 45.0f;
+    glm::vec3 getClickPosition() {
+        glm::vec3 posVector = Position + ( Front * ARM_LENGTH );
+
+        // Arrendondamos cada componente pra alinhar todos eles ao grid
+        GLfloat x = std::round(posVector.x);
+        GLfloat y = std::round(posVector.y);
+        GLfloat z = std::round(posVector.z);
+
+        return {x, y, z};
     }
 
 private:
