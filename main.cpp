@@ -18,6 +18,14 @@ void cameraCallback(GLFWwindow* window, double xpos, double ypos);
 
 void mouseCallback(GLFWwindow* window, int button, int action, int mods);
 
+void drawSkybox(Shader shader, GLuint texture);
+
+void drawGround(Shader shader, GLuint texture);
+
+void drawCursor(Shader shader, GLuint texture);
+
+void drawBlock(Block block, Shader shader, GLuint* textures);
+
 // Configurações da tela
 const unsigned int WIDTH = 1080;
 const unsigned int HEIGHT = 720;
@@ -201,46 +209,14 @@ int main() {
         shader.setMat4("view", view);
         shader.setMat4("projection", projection);
 
-        /*************************** Desenhar o Skybox ***************************/
-        // Carregar a textura do céu
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, textures[SKY]);
-        // Inicializar o modelo do Skybox
-        glm::mat4 model = glm::mat4(1.0f);
-        // Deixar enorme e girando quase imperceptivelmente
-        model = glm::scale(model, glm::vec3(100.0f));
-        model = glm::rotate(model, (float) ( glfwGetTime() / 500.0 ), glm::vec3(0.0f, -0.5f, 0.0f));
-        // Passar pro shader
-        shader.setMat4("model", model);
-        // Renderizar
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+        // Desenhar o mundo
+        drawSkybox(shader, textures[SKY]);
+        drawGround(shader, textures[GROUND]);
+        drawCursor(shader, textures[currentTexture]);
 
-        /*************************** Desenhar o chão ***************************/
-        // Carregar a textura
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, textures[GROUND]);
-        // Inicializar o modelo
-        model = glm::mat4(1.0f);
-        // Deslocar o chão pra alinhar com a face inferior dos blocos em y = 0
-        model = glm::translate(model, glm::vec3(0.0f, -0.5f, 0.0f));
-        // O chão pode ter a mesma área do Skybox
-        model = glm::scale(model, glm::vec3(100.0f, 0.01f, 100.0f));
-        shader.setMat4("model", model);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-
-
-        /******************** Desenhar os blocos do jogador ********************/
+        // Desenhar os blocos do jogador
         for (auto &block: blocks) {
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, textures[block.Texture]);
-
-            // Criar bloco e mover para a posição certa
-            model = glm::mat4(1.0f);
-            model = glm::translate(model, block.Position);
-
-            // Renderizar o bloco
-            shader.setMat4("model", model);
-            glDrawArrays(GL_TRIANGLES, 0, 36);
+            drawBlock(block, shader, textures);
         }
 
         // Mostrar as mudanças na tela
@@ -280,6 +256,64 @@ void breakBlock() {
     if (selectedBlock != blocks.end()) {
         blocks.erase(selectedBlock);
     }
+}
+
+void drawSkybox(Shader shader, GLuint texture) {
+    // Carregar a textura do céu
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    // Inicializar o modelo do Skybox
+    auto model = glm::mat4(1.0f);
+    // Deixar enorme e girando quase imperceptivelmente
+    model = glm::scale(model, glm::vec3(100.0f));
+    model = glm::rotate(model, (float) ( glfwGetTime() / 500.0 ), glm::vec3(0.0f, -0.5f, 0.0f));
+    // Passar pro shader
+    shader.setMat4("model", model);
+    // Renderizar
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+}
+
+void drawGround(Shader shader, GLuint texture) {
+    // Carregar a textura
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    // Inicializar o modelo
+    auto model = glm::mat4(1.0f);
+    // Deslocar o chão pra alinhar com a face inferior dos blocos em y = 0
+    model = glm::translate(model, glm::vec3(0.0f, -0.5f, 0.0f));
+    model = glm::scale(model, glm::vec3(100.0f, 0.01f, 100.0f));
+    // Passar pro shader
+    shader.setMat4("model", model);
+    // Renderizar
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+}
+
+void drawCursor(Shader shader, GLuint texture) {
+    // Carregar a textura
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    // Inicializar o modelo
+    auto model = glm::mat4(1.0f);
+    // Deixar ele no centro da câmera e minúsculo
+    model = glm::translate(model, camera.Position + camera.Front);
+    model = glm::scale(model, glm::vec3(0.01));
+    // Passar pro shader
+    shader.setMat4("model", model);
+    // Renderizar
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+}
+
+void drawBlock(Block block, Shader shader, GLuint* textures) {
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, textures[block.Texture]);
+
+    // Criar bloco e mover para a posição certa
+    auto model = glm::mat4(1.0f);
+    model = glm::translate(model, block.Position);
+
+    // Renderizar o bloco
+    shader.setMat4("model", model);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
 }
 
 // Função para tratamento das teclas relacionadas à movimentação

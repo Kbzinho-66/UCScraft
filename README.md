@@ -13,6 +13,6 @@ Um joguinho de blocos feito por dois caras, ao invés de um
 - [x] Dar um jeito de definir a textura de cada bloco individualmente
 - [ ] Descobrir como usar Stripes de textura
 - [x] **Opcional** - Deixar quebrar os blocos
-- [ ] **Opcional** - Indicar de alguma forma o bloco selecionado
+- [x] **Opcional** - Indicar de alguma forma o bloco selecionado
 - [ ] ???
 - [ ] Lucrar
