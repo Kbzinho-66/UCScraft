@@ -33,9 +33,11 @@ const unsigned int HEIGHT = 720;
 // Constantes de texturas
 #define SKY 0
 #define GROUND 1
-#define CONCRETE 2
-#define ICE 3
-#define WOOD 4
+#define WOOD 2
+#define LEAVES 3
+#define TREE 4
+#define STONE 5
+
 int currentTexture = 2;
 
 Camera camera(glm::vec3(0.0f, 1.0f, 3.0f));
@@ -149,17 +151,18 @@ int main() {
 
 
     // Carregar as texturas
-    auto* textures = new GLuint[5];
-    std::string textureFiles[5] = {
+    auto* textures = new GLuint[6];
+    std::string textureFiles[6] = {
             "Sky.jpg",
             "Ground.jpg",
-            "Concrete.jpg",
-            "Ice.jpg",
-            "Wood.jpg"
+            "Wood.jpg",
+            "Leaves.jpg",
+            "Tree.jpg",
+            "Stone.jpg"
     };
 
-    glGenTextures(5, textures);
-    for (int i = 0; i < 5; ++i) {
+    glGenTextures(6, textures);
+    for (int i = 0; i < 6; ++i) {
         glBindTexture(GL_TEXTURE_2D, textures[i]);
 
         // Configurações da textura
@@ -336,11 +339,13 @@ void processInput(GLFWwindow* window) {
         camera.MovementSpeed = 2.5f;
 
     if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
-        currentTexture = CONCRETE;
-    if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)
-        currentTexture = ICE;
-    if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS)
         currentTexture = WOOD;
+    if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)
+        currentTexture = LEAVES;
+    if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS)
+        currentTexture = TREE;
+    if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS)
+        currentTexture = STONE;
 }
 
 // Função pra tratar mudanças no tamanho da tela
