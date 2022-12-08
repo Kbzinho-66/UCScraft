@@ -3,12 +3,12 @@
 #include <stb_image.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <Shader.h>
+#include "Shader.hpp"
+#include "camera.hpp"
+#include "Block.hpp"
+
 #include <iostream>
 #include <vector>
-#include "camera.h"
-#include "Block.h"
-#include <algorithm>
 
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 
@@ -67,7 +67,6 @@ int main() {
         return -1;
     }
     glfwMakeContextCurrent(window);
-    glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
     glfwSetCursorPosCallback(window, cameraCallback);
     glfwSetMouseButtonCallback(window, mouseCallback);
     // Não mostrar o cursor na tela
@@ -189,7 +188,7 @@ int main() {
 
     // Loop principal de renderização
     while (!glfwWindowShouldClose(window)) {
-        double currentFrame = glfwGetTime();
+        auto currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
@@ -213,7 +212,6 @@ int main() {
         shader.setMat4("projection", projection);
 
         // Desenhar o mundo
-        drawSkybox(shader, textures[SKY]);
         drawGround(shader, textures[GROUND]);
         drawCursor(shader, textures[currentTexture]);
 
@@ -221,6 +219,9 @@ int main() {
         for (auto &block: blocks) {
             drawBlock(block, shader, textures);
         }
+
+        // Desenhar a Skybox por último pra otimizar um pouco, já que vai ter umas quantas coisas cobrindo
+        drawSkybox(shader, textures[SKY]);
 
         // Mostrar as mudanças na tela
         glfwSwapBuffers(window);
@@ -250,18 +251,22 @@ void placeBlock() {
 }
 
 void breakBlock() {
-    auto newPos = camera.getClickPosition();
+    auto clickPos = camera.getClickPosition();
 
-    // Encontrar algum bloco com as mesmas coordenadas do click
+    // Encontrar algum bloco com as mesmas coordenadas do clickPos
     auto selectedBlock = std::find_if(blocks.begin(), blocks.end(),
-                                      [&newPos](Block placed) { return placed.Position == newPos; });
+                                      [&clickPos](Block placed) { return placed.Position == clickPos; });
 
     if (selectedBlock != blocks.end()) {
         blocks.erase(selectedBlock);
+        printf("Bloco em (%f, %f, %f) quebrado\n", clickPos.x, clickPos.y, clickPos.z);
     }
 }
 
 void drawSkybox(Shader shader, GLuint texture) {
+    // Como o céu vai ficar "atrás" de literalmente qualquer coisa, não precisa guardar a profundidade dele
+    glDepthMask(GL_FALSE);
+
     // Carregar a textura do céu
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture);
@@ -274,6 +279,8 @@ void drawSkybox(Shader shader, GLuint texture) {
     shader.setMat4("model", model);
     // Renderizar
     glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    glDepthMask(GL_TRUE);
 }
 
 void drawGround(Shader shader, GLuint texture) {
@@ -297,9 +304,9 @@ void drawCursor(Shader shader, GLuint texture) {
     glBindTexture(GL_TEXTURE_2D, texture);
     // Inicializar o modelo
     auto model = glm::mat4(1.0f);
-    // Deixar ele no centro da câmera e minúsculo
-    model = glm::translate(model, camera.Position + camera.Front);
-    model = glm::scale(model, glm::vec3(0.01));
+    // Colocar um indicador de onde vai ir o bloco novo
+    model = glm::translate(model, camera.getClickPosition());
+    model = glm::scale(model, glm::vec3(0.05));
     // Passar pro shader
     shader.setMat4("model", model);
     // Renderizar
@@ -346,13 +353,6 @@ void processInput(GLFWwindow* window) {
         currentTexture = TREE;
     if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS)
         currentTexture = STONE;
-}
-
-// Função pra tratar mudanças no tamanho da tela
-void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
-    // make sure the viewport matches the new window dimensions; note that width and
-    // height will be significantly larger than specified on retina displays.
-    glViewport(0, 0, width, height);
 }
 
 // Função pra tratar movimentos do mouse e mover a câmera de acordo

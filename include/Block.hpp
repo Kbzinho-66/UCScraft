@@ -1,5 +1,5 @@
-#ifndef UCSCRAFT_BLOCK_H
-#define UCSCRAFT_BLOCK_H
+#ifndef UCSCRAFT_BLOCK_HPP
+#define UCSCRAFT_BLOCK_HPP
 
 #include <glm/vec3.hpp>
 
@@ -16,4 +16,4 @@ public:
 };
 
 
-#endif //UCSCRAFT_BLOCK_H
+#endif //UCSCRAFT_BLOCK_HPP

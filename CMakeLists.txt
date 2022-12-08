@@ -7,11 +7,11 @@ include_directories(include)
 
 add_executable(UCScraft
         main.cpp
-        include/camera.h
-        include/Shader.h
-        include/shader_m.h
+        include/camera.hpp
+        include/Shader.hpp
+        include/shader_m.hpp
         include/stb_image.cpp
         include/stb_image.h
-        include/Block.h)
+        include/Block.hpp)
 
 target_link_libraries(UCScraft -lglfw -lGLEW -lGL)
