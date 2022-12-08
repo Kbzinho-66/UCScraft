@@ -10,8 +10,6 @@
 #include <iostream>
 #include <vector>
 
-void framebufferSizeCallback(GLFWwindow* window, int width, int height);
-
 void processInput(GLFWwindow* window);
 
 void cameraCallback(GLFWwindow* window, double xpos, double ypos);
@@ -46,8 +44,8 @@ float lastY = HEIGHT / 2.0f;
 bool firstMouse = true;
 
 // Variáveis de tempo
-double deltaTime = 0.0f;
-double lastFrame = 0.0f;
+float deltaTime = 0.0f;
+float lastFrame = 0.0f;
 
 // Vetor com todos os blocos posicionados pelo jogador
 std::vector<Block> blocks;
@@ -188,7 +186,7 @@ int main() {
 
     // Loop principal de renderização
     while (!glfwWindowShouldClose(window)) {
-        auto currentFrame = glfwGetTime();
+        auto currentFrame = (float) glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
